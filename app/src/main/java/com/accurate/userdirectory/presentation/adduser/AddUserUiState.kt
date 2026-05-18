@@ -16,5 +16,7 @@ data class AddUserUiState(
     val fieldErrors: Map<String, String> = emptyMap(),
     val isSubmitting: Boolean = false,
     val submitSuccess: Boolean = false,
+    val isEditMode: Boolean = false,
+    val editingUserId: String? = null,
     val message: UiText? = null
 )

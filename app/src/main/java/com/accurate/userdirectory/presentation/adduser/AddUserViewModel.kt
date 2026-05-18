@@ -1,12 +1,15 @@
 package com.accurate.userdirectory.presentation.adduser
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.accurate.userdirectory.core.common.UiText
 import com.accurate.userdirectory.domain.model.Gender
 import com.accurate.userdirectory.domain.repository.ActivityLogRepository
 import com.accurate.userdirectory.domain.usecase.AddUserUseCase
+import com.accurate.userdirectory.domain.usecase.GetUserByIdUseCase
 import com.accurate.userdirectory.domain.usecase.ObserveCitiesUseCase
+import com.accurate.userdirectory.domain.usecase.UpdateUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +20,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddUserViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     private val addUserUseCase: AddUserUseCase,
+    private val updateUserUseCase: UpdateUserUseCase,
+    private val getUserByIdUseCase: GetUserByIdUseCase,
     private val observeCitiesUseCase: ObserveCitiesUseCase,
     private val activityLogRepository: ActivityLogRepository
 ) : ViewModel() {
@@ -29,6 +35,31 @@ class AddUserViewModel @Inject constructor(
         viewModelScope.launch {
             observeCitiesUseCase().collect { cities ->
                 _state.update { it.copy(cities = cities) }
+            }
+        }
+        val userId = savedStateHandle.get<String>("userId")
+        if (!userId.isNullOrBlank()) {
+            loadUser(userId)
+        }
+    }
+
+    private fun loadUser(userId: String) {
+        viewModelScope.launch {
+            val user = getUserByIdUseCase(userId)
+            if (user != null) {
+                _state.update {
+                    it.copy(
+                        isEditMode = true,
+                        editingUserId = userId,
+                        name = user.name,
+                        email = user.email,
+                        phoneNumber = user.phoneNumber,
+                        address = user.address,
+                        city = user.city,
+                        gender = user.gender,
+                        photoUri = user.photoUri
+                    )
+                }
             }
         }
     }
@@ -71,32 +102,48 @@ class AddUserViewModel @Inject constructor(
 
         viewModelScope.launch {
             _state.update { it.copy(isSubmitting = true, fieldErrors = emptyMap()) }
-            val result = addUserUseCase(
-                name = currentState.name.trim(),
-                email = currentState.email.trim(),
-                phoneNumber = currentState.phoneNumber.trim(),
-                address = currentState.address.trim(),
-                city = currentState.city.trim(),
-                genderApiValue = currentState.gender!!.apiValue,
-                photoUri = currentState.photoUri
-            )
 
-            result.fold(
-                onSuccess = {
-                    activityLogRepository.addLog("add_user", "User Ditambahkan", "User ${it.name} berhasil ditambahkan")
-                    _state.update { it.copy(isSubmitting = false, submitSuccess = true) }
-                },
-                onFailure = { e ->
-                    val message = e.message ?: "Gagal menambahkan user"
-                    _state.update {
-                        it.copy(
-                            isSubmitting = false,
-                            message = UiText.error(message)
-                        )
+            if (currentState.isEditMode && currentState.editingUserId != null) {
+                val result = updateUserUseCase(
+                    localId = currentState.editingUserId,
+                    name = currentState.name.trim(),
+                    email = currentState.email.trim(),
+                    phoneNumber = currentState.phoneNumber.trim(),
+                    address = currentState.address.trim(),
+                    city = currentState.city.trim(),
+                    genderApiValue = currentState.gender!!.apiValue,
+                    photoUri = currentState.photoUri
+                )
+                result.fold(
+                    onSuccess = {
+                        activityLogRepository.addLog("edit_user", "User Diperbarui", "User ${it.name} berhasil diperbarui")
+                        _state.update { it.copy(isSubmitting = false, submitSuccess = true) }
+                    },
+                    onFailure = { e ->
+                        _state.update { it.copy(isSubmitting = false, message = UiText.error(e.message ?: "Gagal memperbarui user")) }
                     }
-                    activityLogRepository.addLog("add_user_failed", "Gagal Menambahkan User", message)
-                }
-            )
+                )
+            } else {
+                val result = addUserUseCase(
+                    name = currentState.name.trim(),
+                    email = currentState.email.trim(),
+                    phoneNumber = currentState.phoneNumber.trim(),
+                    address = currentState.address.trim(),
+                    city = currentState.city.trim(),
+                    genderApiValue = currentState.gender!!.apiValue,
+                    photoUri = currentState.photoUri
+                )
+                result.fold(
+                    onSuccess = {
+                        activityLogRepository.addLog("add_user", "User Ditambahkan", "User ${it.name} berhasil ditambahkan")
+                        _state.update { it.copy(isSubmitting = false, submitSuccess = true) }
+                    },
+                    onFailure = { e ->
+                        _state.update { it.copy(isSubmitting = false, message = UiText.error(e.message ?: "Gagal menambahkan user")) }
+                        activityLogRepository.addLog("add_user_failed", "Gagal Menambahkan User", e.message ?: "Unknown")
+                    }
+                )
+            }
         }
     }
 

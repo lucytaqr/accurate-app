@@ -94,7 +94,7 @@ fun AddUserScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tambah User", fontWeight = FontWeight.Bold) },
+                title = { Text(if (state.isEditMode) "Edit User" else "Tambah User", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -302,7 +302,7 @@ fun AddUserScreen(
 
             // Submit Button
             AccurateButton(
-                text = "Simpan User",
+                text = if (state.isEditMode) "Simpan Perubahan" else "Simpan User",
                 onClick = { viewModel.onSubmit() },
                 enabled = true,
                 isLoading = state.isSubmitting,

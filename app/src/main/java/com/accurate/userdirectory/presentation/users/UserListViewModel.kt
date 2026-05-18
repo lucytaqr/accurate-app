@@ -10,6 +10,7 @@ import com.accurate.userdirectory.domain.model.SortOption
 import com.accurate.userdirectory.domain.model.User
 import com.accurate.userdirectory.domain.model.UserFilter
 import com.accurate.userdirectory.domain.repository.ActivityLogRepository
+import com.accurate.userdirectory.domain.usecase.DeleteUserUseCase
 import com.accurate.userdirectory.domain.usecase.FilterSortSearchUsersUseCase
 import com.accurate.userdirectory.domain.usecase.ObserveCitiesUseCase
 import com.accurate.userdirectory.domain.usecase.ObserveUsersUseCase
@@ -35,6 +36,7 @@ class UserListViewModel @Inject constructor(
     private val refreshUsersUseCase: RefreshUsersUseCase,
     private val observeCitiesUseCase: ObserveCitiesUseCase,
     private val refreshCitiesUseCase: RefreshCitiesUseCase,
+    private val deleteUserUseCase: DeleteUserUseCase,
     private val networkMonitor: NetworkMonitor,
     private val activityLogRepository: ActivityLogRepository
 ) : ViewModel() {
@@ -146,6 +148,39 @@ class UserListViewModel @Inject constructor(
 
     fun onClearError() {
         _state.update { it.copy(errorMessage = null) }
+    }
+
+    fun onEditUser(userId: String) {
+        _state.update { it.copy(actionMessage = UiText("edit:$userId")) }
+    }
+
+    fun onShowDeleteDialog(user: User) {
+        _state.update { it.copy(showDeleteDialog = true, deleteTargetUser = user) }
+    }
+
+    fun onDismissDeleteDialog() {
+        _state.update { it.copy(showDeleteDialog = false, deleteTargetUser = null) }
+    }
+
+    fun onConfirmDelete() {
+        val target = _state.value.deleteTargetUser ?: return
+        _state.update { it.copy(showDeleteDialog = false) }
+        viewModelScope.launch {
+            val result = deleteUserUseCase(target.id)
+            result.fold(
+                onSuccess = {
+                    activityLogRepository.addLog("delete", "User Dihapus", "User ${target.name} berhasil dihapus")
+                    _state.update { it.copy(actionMessage = UiText.success("${target.name} dihapus")) }
+                },
+                onFailure = { e ->
+                    _state.update { it.copy(actionMessage = UiText.error(e.message ?: "Gagal menghapus user")) }
+                }
+            )
+        }
+    }
+
+    fun onClearActionMessage() {
+        _state.update { it.copy(actionMessage = null) }
     }
 
     private fun updateDisplayedUsers() {

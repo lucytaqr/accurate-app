@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -74,6 +77,7 @@ import com.accurate.userdirectory.domain.model.UserFilter
 @Composable
 fun UserListScreen(
     onNavigateToAddUser: () -> Unit,
+    onNavigateToEditUser: (String) -> Unit = {},
     viewModel: UserListViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -82,6 +86,19 @@ fun UserListScreen(
         state.errorMessage?.let {
             kotlinx.coroutines.delay(3000)
             viewModel.onClearError()
+        }
+    }
+
+    LaunchedEffect(state.actionMessage) {
+        state.actionMessage?.let { msg ->
+            if (msg.text.startsWith("edit:")) {
+                val userId = msg.text.removePrefix("edit:")
+                onNavigateToEditUser(userId)
+                viewModel.onClearActionMessage()
+            } else {
+                kotlinx.coroutines.delay(3000)
+                viewModel.onClearActionMessage()
+            }
         }
     }
 
@@ -318,7 +335,9 @@ fun UserListScreen(
                         city = user.city,
                         gender = user.gender,
                         photoUri = user.photoUri,
-                        syncStatus = user.syncStatus
+                        syncStatus = user.syncStatus,
+                        onEditClick = { viewModel.onEditUser(user.id) },
+                        onDeleteClick = { viewModel.onShowDeleteDialog(user) }
                     )
                 }
                 item { Spacer(modifier = Modifier.height(80.dp)) }
@@ -335,6 +354,25 @@ fun UserListScreen(
             onDismiss = { viewModel.onFilterDismissed() },
             onApply = { viewModel.onApplyFilter() },
             onReset = { viewModel.onResetFilter() }
+        )
+    }
+
+    // Delete Confirmation Dialog
+    if (state.showDeleteDialog && state.deleteTargetUser != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissDeleteDialog() },
+            title = { Text("Konfirmasi Hapus") },
+            text = { Text("Apakah Anda yakin ingin menghapus user \"${state.deleteTargetUser!!.name}\"?") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.onConfirmDelete() }) {
+                    Text("Hapus", color = AccurateColors.Error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onDismissDeleteDialog() }) {
+                    Text("Batal")
+                }
+            }
         )
     }
 }
@@ -364,127 +402,160 @@ fun FilterBottomSheet(
         containerColor = AccurateColors.Surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 32.dp)
-        ) {
-            Text("Filter", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // City Search
-            OutlinedTextField(
-                value = citySearchQuery,
-                onValueChange = { citySearchQuery = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Cari kota...") },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = AccurateColors.PrimaryPink,
-                    unfocusedBorderColor = AccurateColors.Border
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // City Section
-            Text("Kota", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // All Cities checkbox
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onTempFilterChanged(tempFilter.copy(selectedCities = emptySet()))
-                    }
-                    .padding(vertical = 4.dp)
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
             ) {
-                Checkbox(
-                    checked = tempFilter.selectedCities.isEmpty(),
-                    onCheckedChange = {
-                        onTempFilterChanged(tempFilter.copy(selectedCities = emptySet()))
-                    },
-                    colors = CheckboxDefaults.colors(checkedColor = AccurateColors.PrimaryPink)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Semua Kota", style = MaterialTheme.typography.bodyLarge)
-            }
+                Text("Filter", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
 
-            filteredCities.forEach { city ->
+                OutlinedTextField(
+                    value = citySearchQuery,
+                    onValueChange = { citySearchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Cari kota...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AccurateColors.TextTertiary, modifier = Modifier.size(20.dp)) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AccurateColors.PrimaryPink,
+                        unfocusedBorderColor = AccurateColors.Border
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Kota", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            val newCities = if (city.name in tempFilter.selectedCities) {
-                                tempFilter.selectedCities - city.name
-                            } else {
-                                tempFilter.selectedCities + city.name
-                            }
-                            onTempFilterChanged(tempFilter.copy(selectedCities = newCities))
-                        }
-                        .padding(vertical = 4.dp)
+                        .clickable { onTempFilterChanged(tempFilter.copy(selectedCities = emptySet())) }
+                        .background(
+                            if (tempFilter.selectedCities.isEmpty()) AccurateColors.PrimaryPinkLight.copy(alpha = 0.08f) else AccurateColors.Surface,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Checkbox(
-                        checked = city.name in tempFilter.selectedCities,
-                        onCheckedChange = {
-                            val newCities = if (it) tempFilter.selectedCities + city.name
-                            else tempFilter.selectedCities - city.name
-                            onTempFilterChanged(tempFilter.copy(selectedCities = newCities))
-                        },
+                        checked = tempFilter.selectedCities.isEmpty(),
+                        onCheckedChange = { onTempFilterChanged(tempFilter.copy(selectedCities = emptySet())) },
                         colors = CheckboxDefaults.colors(checkedColor = AccurateColors.PrimaryPink)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(city.name, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Pilih Semua", style = MaterialTheme.typography.bodyLarge, color = if (tempFilter.selectedCities.isEmpty()) AccurateColors.PrimaryPink else AccurateColors.TextPrimary)
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Gender Section
-            Text("Jenis Kelamin", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            listOf(null, Gender.Male, Gender.Female).forEach { gender ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            onTempFilterChanged(tempFilter.copy(selectedGender = gender))
+                if (cities.size > 5) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextButton(onClick = {
+                            onTempFilterChanged(tempFilter.copy(selectedCities = cities.map { it.name }.toSet()))
+                        }) {
+                            Text("Pilih Semua", style = MaterialTheme.typography.labelSmall, color = AccurateColors.Info)
                         }
-                        .padding(vertical = 4.dp)
-                ) {
-                    RadioButton(
-                        selected = tempFilter.selectedGender == gender,
-                        onClick = { onTempFilterChanged(tempFilter.copy(selectedGender = gender)) },
-                        colors = RadioButtonDefaults.colors(selectedColor = AccurateColors.PrimaryPink)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        when (gender) {
-                            null -> "Semua"
-                            Gender.Male -> "Male"
-                            Gender.Female -> "Female"
-                        },
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                        TextButton(onClick = { onTempFilterChanged(tempFilter.copy(selectedCities = emptySet())) }) {
+                            Text("Clear", style = MaterialTheme.typography.labelSmall, color = AccurateColors.TextTertiary)
+                        }
+                    }
                 }
+
+                filteredCities.forEach { city ->
+                    val isSelected = city.name in tempFilter.selectedCities
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val newCities = if (isSelected) tempFilter.selectedCities - city.name
+                                else tempFilter.selectedCities + city.name
+                                onTempFilterChanged(tempFilter.copy(selectedCities = newCities))
+                            }
+                            .background(
+                                if (isSelected) AccurateColors.PrimaryPinkLight.copy(alpha = 0.05f) else AccurateColors.Surface,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Checkbox(
+                            checked = isSelected,
+                            onCheckedChange = {
+                                val newCities = if (it) tempFilter.selectedCities + city.name
+                                else tempFilter.selectedCities - city.name
+                                onTempFilterChanged(tempFilter.copy(selectedCities = newCities))
+                            },
+                            colors = CheckboxDefaults.colors(checkedColor = AccurateColors.PrimaryPink)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            city.name,
+                            style = if (isSelected) MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium) else MaterialTheme.typography.bodyLarge,
+                            color = if (isSelected) AccurateColors.PrimaryPink else AccurateColors.TextPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Jenis Kelamin", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                listOf(null, Gender.Male, Gender.Female).forEach { gender ->
+                    val isSelected = tempFilter.selectedGender == gender
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onTempFilterChanged(tempFilter.copy(selectedGender = gender)) }
+                            .background(
+                                if (isSelected) AccurateColors.PrimaryPinkLight.copy(alpha = 0.05f) else AccurateColors.Surface,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = { onTempFilterChanged(tempFilter.copy(selectedGender = gender)) },
+                            colors = RadioButtonDefaults.colors(selectedColor = AccurateColors.PrimaryPink)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            when (gender) {
+                                null -> "Semua"
+                                Gender.Male -> "Male"
+                                Gender.Female -> "Female"
+                            },
+                            style = if (isSelected) MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium) else MaterialTheme.typography.bodyLarge,
+                            color = if (isSelected) AccurateColors.PrimaryPink else AccurateColors.TextPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
+            // Sticky Bottom Buttons
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        AccurateColors.Surface,
+                        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(
                     onClick = onReset,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).height(48.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Reset", color = AccurateColors.TextSecondary)

@@ -24,6 +24,12 @@ interface UserDao {
     @Query("UPDATE users SET remoteId = :remoteId, syncStatus = :syncStatus, updatedAt = :updatedAt WHERE localId = :localId")
     suspend fun updateSyncStatus(localId: String, remoteId: String?, syncStatus: String, updatedAt: Long)
 
+    @Query("UPDATE users SET name = :name, email = :email, phoneNumber = :phoneNumber, address = :address, city = :city, gender = :gender, photoUri = :photoUri, updatedAt = :updatedAt WHERE localId = :localId")
+    suspend fun updateUser(localId: String, name: String, email: String, phoneNumber: String, address: String, city: String, gender: Int, photoUri: String?, updatedAt: Long)
+
+    @Query("DELETE FROM users WHERE localId = :localId")
+    suspend fun deleteUser(localId: String)
+
     @Query("DELETE FROM users WHERE syncStatus = 'Synced'")
     suspend fun deleteSyncedUsers()
 }

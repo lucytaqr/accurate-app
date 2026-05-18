@@ -15,10 +15,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.accurate.userdirectory.core.designsystem.AccurateColors
 import com.accurate.userdirectory.presentation.activity.ActivityScreen
 import com.accurate.userdirectory.presentation.adduser.AddUserScreen
@@ -76,7 +78,7 @@ fun AppNavGraph() {
         floatingActionButton = {
             if (showFab) {
                 FloatingActionButton(
-                    onClick = { navController.navigate(AppRoute.AddUser.route) },
+                    onClick = { navController.navigate(AppRoute.AddUser.createRoute()) },
                     containerColor = AccurateColors.PrimaryPink,
                     contentColor = AccurateColors.Surface
                 ) {
@@ -101,10 +103,16 @@ fun AppNavGraph() {
             }
             composable(AppRoute.UserList.route) {
                 UserListScreen(
-                    onNavigateToAddUser = { navController.navigate(AppRoute.AddUser.route) }
+                    onNavigateToAddUser = { navController.navigate(AppRoute.AddUser.createRoute()) },
+                    onNavigateToEditUser = { userId ->
+                        navController.navigate(AppRoute.AddUser.createRoute(userId))
+                    }
                 )
             }
-            composable(AppRoute.AddUser.route) {
+            composable(
+                route = "add_user?userId={userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.StringType; nullable = true; defaultValue = null })
+            ) {
                 AddUserScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )

@@ -29,6 +29,9 @@ class UserRepositoryImpl @Inject constructor(
     override fun observeUsers(): Flow<List<User>> =
         userDao.observeUsers().map { entities -> entities.map { it.toDomain() } }
 
+    override suspend fun getUserById(localId: String): User? =
+        userDao.observeUsers().first().find { it.localId == localId }?.toDomain()
+
     override suspend fun refreshUsers(): Result<Unit> = runCatching {
         val dtos = apiService.getUsers()
         val entities = dtos.map { it.toEntity() }
@@ -103,5 +106,48 @@ class UserRepositoryImpl @Inject constructor(
             }
             syncedCount
         }
+    }
+
+    override suspend fun updateUser(
+        localId: String,
+        name: String,
+        email: String,
+        phoneNumber: String,
+        address: String,
+        city: String,
+        genderApiValue: Int,
+        photoUri: String?
+    ): Result<User> {
+        val isOnline = networkMonitor.isOnline.first()
+        val user = getUserById(localId) ?: return Result.failure(Exception("User not found"))
+
+        return if (isOnline && user.remoteId != null) {
+            runCatching {
+                val requestDto = CreateUserRequestDto(name, address, email, phoneNumber, city, genderApiValue, photoUri)
+                val responseDto = apiService.updateUser(user.remoteId!!, requestDto)
+                val now = System.currentTimeMillis()
+                userDao.updateUser(localId, name, email, phoneNumber, address, city, genderApiValue, photoUri ?: user.photoUri, now)
+                userDao.updateSyncStatus(localId, responseDto.id, SyncStatus.Synced.name, now)
+                getUserById(localId)!!
+            }
+        } else {
+            runCatching {
+                val now = System.currentTimeMillis()
+                userDao.updateUser(localId, name, email, phoneNumber, address, city, genderApiValue, photoUri ?: user.photoUri, now)
+                if (user.syncStatus == SyncStatus.PendingCreate) {
+                    userDao.updateSyncStatus(localId, null, SyncStatus.PendingCreate.name, now)
+                }
+                getUserById(localId)!!
+            }
+        }
+    }
+
+    override suspend fun deleteUser(localId: String): Result<Unit> = runCatching {
+        val user = getUserById(localId)
+        val isOnline = networkMonitor.isOnline.first()
+        if (isOnline && user?.remoteId != null) {
+            runCatching { apiService.deleteUser(user.remoteId!!) }
+        }
+        userDao.deleteUser(localId)
     }
 }

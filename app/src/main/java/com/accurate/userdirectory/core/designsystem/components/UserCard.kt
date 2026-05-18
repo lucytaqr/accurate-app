@@ -15,10 +15,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,7 +47,9 @@ fun UserCard(
     photoUri: String?,
     syncStatus: SyncStatus,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    onEditClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null
 ) {
     val isPending = syncStatus == SyncStatus.PendingCreate
 
@@ -139,9 +144,32 @@ fun UserCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(4.dp))
 
-            GenderChip(gender = gender)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                GenderChip(gender = gender)
+                if (onEditClick != null || onDeleteClick != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row {
+                        if (onEditClick != null) {
+                            IconButton(
+                                onClick = onEditClick,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = AccurateColors.Info, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        if (onDeleteClick != null) {
+                            IconButton(
+                                onClick = onDeleteClick,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = AccurateColors.Error, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -23,5 +23,8 @@ data class UserListUiState(
     val displayedUserCount: Int = 0,
     val errorMessage: UiText? = null,
     val isEmpty: Boolean = false,
-    val isEmptyFilterResult: Boolean = false
+    val isEmptyFilterResult: Boolean = false,
+    val showDeleteDialog: Boolean = false,
+    val deleteTargetUser: User? = null,
+    val actionMessage: UiText? = null
 )
