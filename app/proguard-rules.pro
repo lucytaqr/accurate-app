@@ -1,0 +1,4 @@
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.accurate.userdirectory.data.remote.dto.** { *; }
+-keepclassmembers class com.accurate.userdirectory.data.remote.dto.** { *; }
