@@ -1,8 +1,8 @@
 package com.accurate.userdirectory.core.designsystem.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +28,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -105,7 +104,7 @@ fun UserCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -124,7 +123,7 @@ fun UserCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -216,8 +215,13 @@ fun FilterChipView(
 ) {
     Box(
         modifier = modifier
+            .border(
+                width = 1.dp,
+                color = if (isSelected) AccurateColors.PrimaryPink else AccurateColors.Border,
+                shape = RoundedCornerShape(24.dp)
+            )
             .background(
-                if (isSelected) AccurateColors.PrimaryPink else AccurateColors.SurfaceSoft,
+                if (isSelected) AccurateColors.PrimaryPink else AccurateColors.Surface,
                 RoundedCornerShape(24.dp)
             )
             .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -226,6 +230,7 @@ fun FilterChipView(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
             color = if (isSelected) AccurateColors.Surface else AccurateColors.TextSecondary
         )
     }

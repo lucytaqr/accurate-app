@@ -28,6 +28,13 @@ val AccurateTypography = Typography(
         lineHeight = 24.sp,
         color = AccurateColors.TextPrimary
     ),
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 24.sp,
+        lineHeight = 24.sp,
+        color = AccurateColors.TextPrimary
+    ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,

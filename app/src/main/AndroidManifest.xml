@@ -10,7 +10,7 @@
     <application
         android:name=".AccurateApp"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/logo_accurate"
         android:label="Accurate Directory"
         android:supportsRtl="true"
         android:theme="@style/Theme.AccurateUserDirectory"

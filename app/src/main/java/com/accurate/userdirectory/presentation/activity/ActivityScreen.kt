@@ -1,7 +1,8 @@
 package com.accurate.userdirectory.presentation.activity
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,6 +45,8 @@ fun ActivityScreen(
                 titleContentColor = AccurateColors.TextPrimary
             )
         )
+
+        Box(modifier = Modifier.fillMaxWidth().height(16.dp).background(AccurateColors.PrimaryPink))
 
         when {
             state.isLoading -> LoadingSkeleton()

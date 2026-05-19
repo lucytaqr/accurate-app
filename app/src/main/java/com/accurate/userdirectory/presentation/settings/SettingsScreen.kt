@@ -1,17 +1,23 @@
 package com.accurate.userdirectory.presentation.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SyncProblem
@@ -55,70 +61,160 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AccurateColors.Surface,
-                    titleContentColor = AccurateColors.TextPrimary
-                )
-            )
-        },
+        containerColor = AccurateColors.SurfaceSoft,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(bottom = padding.calculateBottomPadding())
+                .statusBarsPadding()
         ) {
-            // App Info Card
-            AccurateCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = AccurateColors.PrimaryPink)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text("Accurate Directory", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Text("Versi ${state.appVersion}", style = MaterialTheme.typography.bodySmall, color = AccurateColors.TextSecondary)
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider(color = AccurateColors.Divider)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row {
-                    Text("API Source: ", style = MaterialTheme.typography.bodySmall, color = AccurateColors.TextSecondary)
-                    Text(state.apiSource, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                }
-            }
-
-            // Sync Info Card
-            AccurateCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        if (state.pendingSyncCount > 0) Icons.Default.SyncProblem else Icons.Default.CloudSync,
-                        contentDescription = null,
-                        tint = if (state.pendingSyncCount > 0) AccurateColors.Warning else AccurateColors.Success
+            TopAppBar(
+                title = {
+                    Text(
+                        "Settings",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = AccurateColors.Surface,
+                    titleContentColor = AccurateColors.TextPrimary
+                ),
+                windowInsets = WindowInsets(0.dp)
+            )
+
+            // Pink Accent Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(16.dp)
+                    .background(AccurateColors.PrimaryPink)
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Section: Informasi Aplikasi
+                Text(
+                    "Informasi Aplikasi",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AccurateColors.TextSecondary,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+
+                AccurateCard {
                     Column {
-                        Text("Status Sinkronisasi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Text(state.lastSyncText, style = MaterialTheme.typography.bodySmall, color = AccurateColors.TextSecondary)
-                        Text(
-                            if (state.pendingSyncCount > 0) "${state.pendingSyncCount} user belum tersinkron"
-                            else "Semua user tersinkron",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (state.pendingSyncCount > 0) AccurateColors.Warning else AccurateColors.Success
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = AccurateColors.PrimaryPink,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "Accurate Directory",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                                Text(
+                                    "Versi ${state.appVersion}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = AccurateColors.TextSecondary
+                                )
+                            }
+                        }
+                        
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = AccurateColors.Divider
                         )
+                        
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "API Source",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = AccurateColors.TextPrimary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                state.apiSource,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = AccurateColors.TextSecondary
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                // Section: Sinkronisasi
+                Text(
+                    "Sinkronisasi",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AccurateColors.TextSecondary,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
 
-            // Buttons
-            AccurateCard {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                AccurateCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val syncIcon = if (state.pendingSyncCount > 0) Icons.Default.SyncProblem else Icons.Default.CheckCircle
+                            val syncColor = if (state.pendingSyncCount > 0) AccurateColors.Warning else AccurateColors.Success
+                            
+                            Icon(
+                                syncIcon,
+                                contentDescription = null,
+                                tint = syncColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "Status Data",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                                Text(
+                                    if (state.pendingSyncCount > 0) "${state.pendingSyncCount} user belum tersinkron"
+                                    else "Semua data sudah sinkron",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = syncColor
+                                )
+                            }
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = null,
+                                tint = AccurateColors.TextTertiary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "Update terakhir: ${state.lastSyncText}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = AccurateColors.TextSecondary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Action Buttons
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     AccurateButton(
                         text = if (state.isSyncing) "Menyinkronkan..." else "Refresh Data",
                         onClick = { viewModel.onRefreshData() },

@@ -1,14 +1,16 @@
 package com.accurate.userdirectory.presentation.users
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,21 +18,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -41,8 +49,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -59,10 +65,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import com.accurate.userdirectory.worker.UserSyncWorker
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.accurate.userdirectory.core.designsystem.AccurateColors
-import com.accurate.userdirectory.core.designsystem.components.AccurateButton
 import com.accurate.userdirectory.core.designsystem.components.EmptyStateView
 import com.accurate.userdirectory.core.designsystem.components.ErrorStateView
 import com.accurate.userdirectory.core.designsystem.components.FilterChipView
@@ -102,14 +109,15 @@ fun UserListScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(AccurateColors.Surface).statusBarsPadding()) {
+
         // Offline Banner
         if (state.isOffline) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(AccurateColors.OfflineBannerBg)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -132,201 +140,221 @@ fun UserListScreen(
             title = {
                 Text(
                     "User Directory",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge
                 )
-            },
-            actions = {
-                IconButton(onClick = { viewModel.onRefresh() }) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                }
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = AccurateColors.Surface,
                 titleContentColor = AccurateColors.TextPrimary
-            )
+            ),
+            windowInsets = WindowInsets(0.dp)
         )
 
-        // Search Bar
-        OutlinedTextField(
-            value = state.filter.keyword,
-            onValueChange = viewModel::onSearchChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            placeholder = { Text("Cari nama, email, atau kota...") },
-            leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = null, tint = AccurateColors.TextTertiary)
-            },
-            trailingIcon = {
-                if (state.filter.keyword.isNotBlank()) {
-                    IconButton(onClick = { viewModel.onSearchChanged("") }) {
-                        Icon(Icons.Default.Close, contentDescription = "Clear")
-                    }
-                }
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccurateColors.PrimaryPink,
-                unfocusedBorderColor = AccurateColors.Border,
-                cursorColor = AccurateColors.PrimaryPink
-            )
-        )
+        Box(modifier = Modifier.fillMaxWidth().height(16.dp).background(AccurateColors.PrimaryPink))
 
-        Spacer(modifier = Modifier.height(12.dp))
 
-        // Filter and Sort Row
+        // Search and Filter Row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Filter Button
-            TextButton(
+            OutlinedTextField(
+                value = state.filter.keyword,
+                onValueChange = viewModel::onSearchChanged,
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Cari nama, email, atau kota...", style = MaterialTheme.typography.bodyMedium) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = AccurateColors.TextSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = AccurateColors.Border,
+                    unfocusedBorderColor = AccurateColors.Border,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    cursorColor = AccurateColors.PrimaryPink
+                )
+            )
+
+            Button(
                 onClick = { viewModel.onFilterClicked() },
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AccurateColors.PrimaryPink,
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Icon(
                     Icons.Default.FilterList,
                     contentDescription = null,
-                    tint = if (state.filter.isActive) AccurateColors.PrimaryPink else AccurateColors.TextSecondary
+                    modifier = Modifier.size(18.dp),
+                    tint = Color.White
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    "Filter",
-                    color = if (state.filter.isActive) AccurateColors.PrimaryPink else AccurateColors.TextSecondary
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Filter", color = Color.White)
+            }
+        }
+
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                FilterChipView(
+                    label = "Semua Kota",
+                    isSelected = state.filter.selectedCities.isEmpty(),
+                    onClick = { viewModel.onResetFilter() }
                 )
             }
+            items(state.cities) { city ->
+                val isSelected = city.name in state.filter.selectedCities
+                FilterChipView(
+                    label = city.name,
+                    isSelected = isSelected,
+                    onClick = { 
+                        if (isSelected) viewModel.onRemoveCityFilter(city.name)
+                        else {
+                            val newCities = state.filter.selectedCities + city.name
+                            viewModel.onTempFilterChanged(state.filter.copy(selectedCities = newCities))
+                            viewModel.onApplyFilter()
+                        }
+                    }
+                )
+            }
+        }
 
-            Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            // Sort Dropdown
-            var showSortMenu by remember { mutableStateOf(false) }
-            Box {
-                TextButton(
-                    onClick = { showSortMenu = true },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        "Urutkan: ${state.filter.sortOption.displayName}",
-                        color = AccurateColors.TextSecondary
-                    )
-                    Icon(
-                        Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        tint = AccurateColors.TextSecondary
+        // Sort Dropdown
+        var showSortMenu by remember { mutableStateOf(false) }
+        Box(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)) {
+            Row(
+                modifier = Modifier
+                    .clickable { showSortMenu = true }
+                    .background(AccurateColors.Surface, RoundedCornerShape(8.dp))
+                    .border(1.dp, AccurateColors.Border, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Urutkan: ${state.filter.sortOption.displayName}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AccurateColors.TextPrimary
+                )
+                Icon(
+                    Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    tint = AccurateColors.TextSecondary
+                )
+            }
+            DropdownMenu(
+                expanded = showSortMenu,
+                onDismissRequest = { showSortMenu = false },
+                offset = DpOffset(0.dp, 4.dp)
+            ) {
+                SortOption.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.displayName) },
+                        onClick = {
+                            viewModel.onSortChanged(option)
+                            showSortMenu = false
+                        }
                     )
                 }
-                DropdownMenu(
-                    expanded = showSortMenu,
-                    onDismissRequest = { showSortMenu = false },
-                    offset = DpOffset(0.dp, 4.dp)
-                ) {
-                    SortOption.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(option.displayName)
-                                    if (state.filter.sortOption == option) {
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Icon(
-                                            Icons.Default.Check,
-                                            contentDescription = null,
-                                            tint = AccurateColors.PrimaryPink,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
-                            },
-                            onClick = {
-                                viewModel.onSortChanged(option)
-                                showSortMenu = false
-                            }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Summary Card
+        if (!state.isEmpty) {
+            val context = LocalContext.current
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(AccurateColors.SummaryBg)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Menampilkan ${state.displayedUserCount} user",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AccurateColors.TextPrimary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    Text(
+                        "Terakhir diperbarui: ${state.lastUpdatedText.replace("Last update: ", "")}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AccurateColors.TextSecondary
+                    )
+                }
+
+                if (state.pendingSyncCount > 0) {
+                    IconButton(
+                        onClick = { UserSyncWorker.enqueue(context) },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .border(1.dp, AccurateColors.Border, RoundedCornerShape(8.dp))
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Sync",
+                            tint = AccurateColors.PrimaryPink,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
             }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Active Filter Chips
-        if (state.filter.isActive) {
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                state.filter.selectedCities.forEach { city ->
-                    FilterChipView(
-                        label = city,
-                        isSelected = true,
-                        onClick = { viewModel.onRemoveCityFilter(city) }
-                    )
-                }
-                if (state.filter.selectedGender != null) {
-                    FilterChipView(
-                        label = state.filter.selectedGender!!.displayName,
-                        isSelected = true,
-                        onClick = { viewModel.onRemoveGenderFilter() }
-                    )
-                }
-                TextButton(onClick = { viewModel.onResetFilter() }) {
-                    Text("Reset", color = AccurateColors.Error, style = MaterialTheme.typography.labelMedium)
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        // Summary Card
-        if (!state.isEmpty) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Menampilkan ${state.displayedUserCount} dari ${state.totalUserCount} user",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AccurateColors.TextTertiary
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    state.lastUpdatedText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AccurateColors.TextTertiary
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
 
         // Content
+        val contentModifier = Modifier.weight(1f)
         when {
-            state.isInitialLoading -> LoadingSkeleton()
-            state.errorMessage != null && state.users.isEmpty() -> ErrorStateView(
-                message = state.errorMessage!!.text,
-                onRetry = { viewModel.onRetry() }
-            )
-            state.isEmptyFilterResult -> EmptyStateView(
-                title = "Tidak Ada Hasil",
-                subtitle = "Tidak ada user yang sesuai dengan filter atau pencarian Anda.",
-                actionLabel = "Reset Filter",
-                onAction = { viewModel.onResetFilter() }
-            )
-            state.isEmpty -> EmptyStateView(
-                title = "Belum Ada User",
-                subtitle = "Tambahkan user pertama Anda sekarang.",
-                actionLabel = "Tambah User",
-                onAction = onNavigateToAddUser
-            )
+            state.isInitialLoading -> Box(modifier = contentModifier) { LoadingSkeleton() }
+            state.errorMessage != null && state.users.isEmpty() -> Box(modifier = contentModifier) {
+                ErrorStateView(
+                    message = state.errorMessage!!.text,
+                    onRetry = { viewModel.onRetry() }
+                )
+            }
+            state.isEmptyFilterResult -> Box(modifier = contentModifier) {
+                EmptyStateView(
+                    title = "Tidak Ada Hasil",
+                    subtitle = "Tidak ada user yang sesuai dengan filter atau pencarian Anda.",
+                    actionLabel = "Reset Filter",
+                    onAction = { viewModel.onResetFilter() }
+                )
+            }
+            state.isEmpty -> Box(modifier = contentModifier) {
+                EmptyStateView(
+                    title = "Belum Ada User",
+                    subtitle = "Tambahkan user pertama Anda sekarang.",
+                    actionLabel = "Tambah User",
+                    onAction = onNavigateToAddUser
+                )
+            }
             else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = contentModifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(state.displayedUsers, key = { it.id }) { user ->
                     UserCard(
@@ -340,7 +368,7 @@ fun UserListScreen(
                         onDeleteClick = { viewModel.onShowDeleteDialog(user) }
                     )
                 }
-                item { Spacer(modifier = Modifier.height(80.dp)) }
+                item { Spacer(modifier = Modifier.height(16.dp)) }
             }
         }
     }
@@ -398,114 +426,161 @@ fun FilterBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        containerColor = AccurateColors.Surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = Color.White,
+        tonalElevation = 0.dp,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.75f)
+        ) {
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 24.dp)
             ) {
-                Text("Filter", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Filter",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = AccurateColors.TextPrimary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Terapkan filter untuk menemukan user dengan mudah",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AccurateColors.TextSecondary
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    "Kota",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AccurateColors.TextPrimary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = citySearchQuery,
                     onValueChange = { citySearchQuery = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Cari kota...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AccurateColors.TextTertiary, modifier = Modifier.size(20.dp)) },
+                    placeholder = {
+                        Text("Cari kota...", color = AccurateColors.TextTertiary)
+                    },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AccurateColors.PrimaryPink,
-                        unfocusedBorderColor = AccurateColors.Border
+                        focusedBorderColor = AccurateColors.Border,
+                        unfocusedBorderColor = AccurateColors.Border,
+                        focusedContainerColor = AccurateColors.Surface,
+                        unfocusedContainerColor = AccurateColors.Surface
                     )
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Kota", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onTempFilterChanged(tempFilter.copy(selectedCities = emptySet())) }
-                        .background(
-                            if (tempFilter.selectedCities.isEmpty()) AccurateColors.PrimaryPinkLight.copy(alpha = 0.08f) else AccurateColors.Surface,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Checkbox(
-                        checked = tempFilter.selectedCities.isEmpty(),
-                        onCheckedChange = { onTempFilterChanged(tempFilter.copy(selectedCities = emptySet())) },
-                        colors = CheckboxDefaults.colors(checkedColor = AccurateColors.PrimaryPink)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Pilih Semua", style = MaterialTheme.typography.bodyLarge, color = if (tempFilter.selectedCities.isEmpty()) AccurateColors.PrimaryPink else AccurateColors.TextPrimary)
-                }
-
-                if (cities.size > 5) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TextButton(onClick = {
-                            onTempFilterChanged(tempFilter.copy(selectedCities = cities.map { it.name }.toSet()))
-                        }) {
-                            Text("Pilih Semua", style = MaterialTheme.typography.labelSmall, color = AccurateColors.Info)
-                        }
-                        TextButton(onClick = { onTempFilterChanged(tempFilter.copy(selectedCities = emptySet())) }) {
-                            Text("Clear", style = MaterialTheme.typography.labelSmall, color = AccurateColors.TextTertiary)
-                        }
-                    }
-                }
-
-                filteredCities.forEach { city ->
-                    val isSelected = city.name in tempFilter.selectedCities
+                // City List
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Option: Semua Kota
+                    val isAllCitiesSelected = tempFilter.selectedCities.isEmpty()
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                val newCities = if (isSelected) tempFilter.selectedCities - city.name
-                                else tempFilter.selectedCities + city.name
-                                onTempFilterChanged(tempFilter.copy(selectedCities = newCities))
-                            }
-                            .background(
-                                if (isSelected) AccurateColors.PrimaryPinkLight.copy(alpha = 0.05f) else AccurateColors.Surface,
-                                RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .clickable { onTempFilterChanged(tempFilter.copy(selectedCities = emptySet())) }
+                            .padding(vertical = 8.dp)
                     ) {
-                        Checkbox(
-                            checked = isSelected,
-                            onCheckedChange = {
-                                val newCities = if (it) tempFilter.selectedCities + city.name
-                                else tempFilter.selectedCities - city.name
-                                onTempFilterChanged(tempFilter.copy(selectedCities = newCities))
-                            },
-                            colors = CheckboxDefaults.colors(checkedColor = AccurateColors.PrimaryPink)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isAllCitiesSelected) AccurateColors.PrimaryPink else AccurateColors.Border,
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .background(
+                                    if (isAllCitiesSelected) AccurateColors.PrimaryPink else Color.Transparent,
+                                    RoundedCornerShape(6.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isAllCitiesSelected) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            city.name,
-                            style = if (isSelected) MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium) else MaterialTheme.typography.bodyLarge,
-                            color = if (isSelected) AccurateColors.PrimaryPink else AccurateColors.TextPrimary
+                            "Semua Kota",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = AccurateColors.TextPrimary
                         )
+                    }
+
+                    filteredCities.forEach { city ->
+                        val isSelected = city.name in tempFilter.selectedCities
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val newCities = if (isSelected) tempFilter.selectedCities - city.name
+                                    else tempFilter.selectedCities + city.name
+                                    onTempFilterChanged(tempFilter.copy(selectedCities = newCities))
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .border(
+                                        width = 1.dp,
+                                        color = if (isSelected) AccurateColors.PrimaryPink else AccurateColors.Border,
+                                        shape = RoundedCornerShape(6.dp)
+                                    )
+                                    .background(
+                                        if (isSelected) AccurateColors.PrimaryPink else Color.Transparent,
+                                        RoundedCornerShape(6.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                city.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = AccurateColors.TextPrimary
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Text("Jenis Kelamin", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Jenis Kelamin",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AccurateColors.TextPrimary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
 
                 listOf(null, Gender.Male, Gender.Female).forEach { gender ->
                     val isSelected = tempFilter.selectedGender == gender
@@ -514,57 +589,79 @@ fun FilterBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onTempFilterChanged(tempFilter.copy(selectedGender = gender)) }
-                            .background(
-                                if (isSelected) AccurateColors.PrimaryPinkLight.copy(alpha = 0.05f) else AccurateColors.Surface,
-                                RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .padding(vertical = 8.dp)
                     ) {
-                        RadioButton(
-                            selected = isSelected,
-                            onClick = { onTempFilterChanged(tempFilter.copy(selectedGender = gender)) },
-                            colors = RadioButtonDefaults.colors(selectedColor = AccurateColors.PrimaryPink)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) AccurateColors.PrimaryPink else AccurateColors.Border,
+                                    shape = CircleShape
+                                )
+                                .background(
+                                    if (isSelected) AccurateColors.PrimaryPink else Color.Transparent,
+                                    CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             when (gender) {
                                 null -> "Semua"
                                 Gender.Male -> "Male"
                                 Gender.Female -> "Female"
                             },
-                            style = if (isSelected) MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium) else MaterialTheme.typography.bodyLarge,
-                            color = if (isSelected) AccurateColors.PrimaryPink else AccurateColors.TextPrimary
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = AccurateColors.TextPrimary
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // Sticky Bottom Buttons
+            // Bottom Buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        AccurateColors.Surface,
-                        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
-                    )
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(24.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                TextButton(
+                Button(
                     onClick = onReset,
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, AccurateColors.PrimaryPink),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = AccurateColors.PrimaryPink
+                    )
                 ) {
-                    Text("Reset", color = AccurateColors.TextSecondary)
+                    Text("Reset", fontWeight = FontWeight.Bold, color = AccurateColors.PrimaryPink)
                 }
-                AccurateButton(
-                    text = "Terapkan Filter",
+
+                Button(
                     onClick = onApply,
-                    modifier = Modifier.weight(1f)
-                )
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccurateColors.PrimaryPink)
+                ) {
+                    Text("Terapkan Filter", fontWeight = FontWeight.Bold, color = Color.White)
+                }
             }
         }
     }

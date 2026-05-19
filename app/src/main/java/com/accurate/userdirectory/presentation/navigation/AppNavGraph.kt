@@ -1,5 +1,10 @@
 package com.accurate.userdirectory.presentation.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -13,6 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -46,31 +53,41 @@ fun AppNavGraph() {
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(
-                    containerColor = AccurateColors.Surface,
-                    contentColor = AccurateColors.PrimaryPink
-                ) {
-                    bottomNavItems.forEach { item ->
-                        val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = AccurateColors.PrimaryPink,
-                                selectedTextColor = AccurateColors.PrimaryPink,
-                                unselectedIconColor = AccurateColors.TextTertiary,
-                                unselectedTextColor = AccurateColors.TextTertiary,
-                                indicatorColor = AccurateColors.PrimaryPinkLight.copy(alpha = 0.2f)
+                Column {
+                    // Top border for Bottom Navigation
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(AccurateColors.Border.copy(alpha = 0.5f))
+                    )
+                    NavigationBar(
+                        containerColor = Color.White,
+                        contentColor = AccurateColors.PrimaryPink,
+                        tonalElevation = 0.dp
+                    ) {
+                        bottomNavItems.forEach { item ->
+                            val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(item.icon, contentDescription = item.label) },
+                                label = { Text(item.label) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = AccurateColors.PrimaryPink,
+                                    selectedTextColor = AccurateColors.PrimaryPink,
+                                    unselectedIconColor = AccurateColors.TextTertiary,
+                                    unselectedTextColor = AccurateColors.TextTertiary,
+                                    indicatorColor = AccurateColors.PrimaryPinkLight.copy(alpha = 0.2f)
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
@@ -90,7 +107,7 @@ fun AppNavGraph() {
         NavHost(
             navController = navController,
             startDestination = AppRoute.Splash.route,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
         ) {
             composable(AppRoute.Splash.route) {
                 SplashScreen(

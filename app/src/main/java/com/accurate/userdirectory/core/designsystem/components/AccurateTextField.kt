@@ -1,7 +1,9 @@
 package com.accurate.userdirectory.core.designsystem.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,7 +13,11 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.accurate.userdirectory.core.designsystem.AccurateColors
 
@@ -27,26 +33,43 @@ fun AccurateTextField(
     keyboardType: KeyboardType = KeyboardType.Text,
     singleLine: Boolean = true,
     maxLines: Int = 1,
-    enabled: Boolean = true
+    minLines: Int = 1,
+    enabled: Boolean = true,
+    isRequired: Boolean = false
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = buildAnnotatedString {
+                append(label)
+                if (isRequired) {
+                    withStyle(SpanStyle(color = if (isError) AccurateColors.Error else AccurateColors.TextPrimary)) {
+                        append(" *")
+                    }
+                }
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = AccurateColors.TextPrimary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { Text(label) },
-            placeholder = { Text(placeholder) },
+            placeholder = { Text(placeholder, color = AccurateColors.TextTertiary) },
             isError = isError,
             singleLine = singleLine,
             maxLines = maxLines,
+            minLines = minLines,
             enabled = enabled,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccurateColors.PrimaryPink,
+                focusedBorderColor = AccurateColors.Border,
                 unfocusedBorderColor = AccurateColors.Border,
                 errorBorderColor = AccurateColors.Error,
-                focusedLabelColor = AccurateColors.PrimaryPink,
-                cursorColor = AccurateColors.PrimaryPink
+                cursorColor = AccurateColors.PrimaryPink,
+                focusedContainerColor = AccurateColors.Surface,
+                unfocusedContainerColor = AccurateColors.Surface
             ),
             modifier = Modifier.fillMaxWidth()
         )

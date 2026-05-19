@@ -4,14 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.accurate.userdirectory.core.common.UiText
 import com.accurate.userdirectory.core.network.NetworkMonitor
-import com.accurate.userdirectory.domain.model.Gender
 import com.accurate.userdirectory.domain.model.City
 import com.accurate.userdirectory.domain.model.SortOption
+import com.accurate.userdirectory.domain.model.SyncStatus
 import com.accurate.userdirectory.domain.model.User
 import com.accurate.userdirectory.domain.model.UserFilter
 import com.accurate.userdirectory.domain.repository.ActivityLogRepository
 import com.accurate.userdirectory.domain.usecase.DeleteUserUseCase
-import com.accurate.userdirectory.domain.usecase.FilterSortSearchUsersUseCase
 import com.accurate.userdirectory.domain.usecase.ObserveCitiesUseCase
 import com.accurate.userdirectory.domain.usecase.ObserveUsersUseCase
 import com.accurate.userdirectory.domain.usecase.RefreshCitiesUseCase
@@ -22,7 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -53,7 +51,7 @@ class UserListViewModel @Inject constructor(
                 observeCitiesUseCase(),
                 networkMonitor.isOnline
             ) { users, cities, isOnline ->
-                applyFilter(users, _state.value.filter, cities, isOnline)
+                applyFilter(users, _state.value.filter, cities, !isOnline)
             }.collect { newState ->
                 _state.value = newState
             }
@@ -115,30 +113,6 @@ class UserListViewModel @Inject constructor(
         val newFilter = currentState.filter.copy(selectedCities = newCities)
         _state.update { it.copy(filter = newFilter, tempFilter = newFilter) }
         updateDisplayedUsers()
-    }
-
-    fun onRemoveGenderFilter() {
-        val currentState = _state.value
-        val newFilter = currentState.filter.copy(selectedGender = null)
-        _state.update { it.copy(filter = newFilter, tempFilter = newFilter) }
-        updateDisplayedUsers()
-    }
-
-    fun onRefresh() {
-        viewModelScope.launch {
-            _state.update { it.copy(isRefreshing = true) }
-            refreshCitiesUseCase()
-            val result = refreshUsersUseCase()
-            if (result.isSuccess) {
-                activityLogRepository.addLog("refresh", "Data Refreshed", "Daftar user berhasil diperbarui")
-            } else {
-                val error = result.exceptionOrNull()?.message ?: "Gagal refresh data"
-                if (_state.value.users.isEmpty()) {
-                    _state.update { it.copy(errorMessage = UiText.error(error)) }
-                }
-            }
-            _state.update { it.copy(isRefreshing = false, lastUpdatedText = getCurrentTimeText()) }
-        }
     }
 
     fun onRetry() {
@@ -212,7 +186,7 @@ class UserListViewModel @Inject constructor(
             SortOption.NameDesc -> filtered.sortedByDescending { it.name.lowercase() }
         }
 
-        val pendingCount = users.count { it.syncStatus.name == "PendingCreate" }
+        val pendingCount = users.count { it.syncStatus == SyncStatus.PendingCreate }
 
         return UserListUiState(
             isInitialLoading = false,
