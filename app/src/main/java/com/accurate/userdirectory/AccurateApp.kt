@@ -1,7 +1,7 @@
 package com.accurate.userdirectory
 
 import android.app.Application
-import com.accurate.userdirectory.BuildConfig
+import com.accurate.userdirectory.worker.UserSyncWorker
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
@@ -12,5 +12,6 @@ class AccurateApp : Application() {
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+        UserSyncWorker.enqueuePeriodicSync(this)
     }
 }

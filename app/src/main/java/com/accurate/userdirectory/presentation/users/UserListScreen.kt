@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,7 +43,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -65,8 +63,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
-import com.accurate.userdirectory.worker.UserSyncWorker
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.accurate.userdirectory.core.designsystem.AccurateColors
@@ -280,7 +276,6 @@ fun UserListScreen(
 
         // Summary Card
         if (!state.isEmpty) {
-            val context = LocalContext.current
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -303,23 +298,6 @@ fun UserListScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = AccurateColors.TextSecondary
                     )
-                }
-
-                if (state.pendingSyncCount > 0) {
-                    IconButton(
-                        onClick = { UserSyncWorker.enqueue(context) },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(Color.White, RoundedCornerShape(8.dp))
-                            .border(1.dp, AccurateColors.Border, RoundedCornerShape(8.dp))
-                    ) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Sync",
-                            tint = AccurateColors.PrimaryPink,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))

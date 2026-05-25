@@ -2,9 +2,11 @@ package com.accurate.userdirectory.worker
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.accurate.userdirectory.domain.usecase.SyncPendingUsersUseCase
@@ -41,16 +43,27 @@ class UserSyncWorker @AssistedInject constructor(
     }
 
     companion object {
-        const val WORK_NAME = "user_sync_worker"
+        const val PERIODIC_WORK_NAME = "user_sync_periodic"
 
-        fun enqueue(context: Context) {
-            val workRequest = OneTimeWorkRequestBuilder<UserSyncWorker>()
-                .setInitialDelay(3, TimeUnit.SECONDS)
-                .addTag(WORK_NAME)
+        private val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        fun enqueuePeriodicSync(context: Context) {
+            val workRequest = PeriodicWorkRequestBuilder<UserSyncWorker>(
+                15, TimeUnit.MINUTES
+            )
+                .setConstraints(constraints)
+                .addTag(PERIODIC_WORK_NAME)
                 .build()
 
             WorkManager.getInstance(context)
-                .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.REPLACE, workRequest)
+                .enqueueUniquePeriodicWork(
+                    PERIODIC_WORK_NAME,
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    workRequest
+                )
+            Timber.d("UserSyncWorker: Periodic sync scheduled every 15 minutes")
         }
     }
 }
