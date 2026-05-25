@@ -83,13 +83,12 @@ Aplikasi Android untuk melihat daftar user, mencari, mengurutkan, memfilter, men
 | DI | Hilt | 2.51 |
 | Navigation | Navigation Compose | 2.7.7 |
 | Networking | Retrofit + OkHttp | 2.9.0 / 4.12.0 |
-| JSON | Moshi (KSP Codegen) | 1.15.1 |
+| JSON | Moshi + KSP Codegen | 1.15.1 |
 | Database | Room | 2.6.1 |
 | Background | WorkManager | 2.9.0 |
 | Images | Coil Compose | 2.6.0 |
 | Photo Picker | Android Photo Picker | — |
 | Logging | Timber | 5.0.1 |
-| Analytics | Firebase Analytics (optional) | BOM 32.8.0 |
 | Unit Test | JUnit 4, Coroutines Test, Turbine | 1.0.0 |
 | Min SDK | Android 8 (API 26) | — |
 | Target SDK | Android 14 (API 34) | — |
@@ -151,14 +150,13 @@ app/src/main/java/com/accurate/userdirectory/
 │   └── repository/                  # Repository implementations
 │
 ├── core/                            # Shared utilities
-│   ├── common/                      # ResultState, UiText, Dispatchers
+│   ├── common/                      # UiText
 │   ├── designsystem/                # Colors, Typography, Components
-│   ├── network/                     # NetworkMonitor, ApiErrorHandler
+│   ├── network/                     # NetworkMonitor
 │   └── database/                    # Room Database
 │
 ├── di/                              # Hilt modules
-├── worker/                          # WorkManager (UserSyncWorker)
-└── analytics/                       # Firebase Analytics helper
+└── worker/                          # WorkManager (UserSyncWorker)
 ```
 
 ### Alur Data — Clean Architecture + Offline-First

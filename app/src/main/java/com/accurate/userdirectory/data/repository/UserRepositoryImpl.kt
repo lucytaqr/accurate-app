@@ -1,7 +1,7 @@
 package com.accurate.userdirectory.data.repository
 
-import com.accurate.userdirectory.core.network.ApiErrorHandler
 import com.accurate.userdirectory.core.network.NetworkMonitor
+import retrofit2.HttpException
 import com.accurate.userdirectory.data.local.dao.UserDao
 import com.accurate.userdirectory.data.mapper.createPendingUserEntity
 import com.accurate.userdirectory.data.mapper.toCreateRequestDto
@@ -62,10 +62,15 @@ class UserRepositoryImpl @Inject constructor(
                     gender = genderApiValue,
                     photoUri = photoUri
                 )
-                val responseDto = apiService.createUser(requestDto)
-                val entity = responseDto.toEntity().copy(photoUri = photoUri)
-                userDao.insertUser(entity)
-                entity.toDomain()
+                try {
+                    val responseDto = apiService.createUser(requestDto)
+                    val entity = responseDto.toEntity().copy(photoUri = photoUri)
+                    userDao.insertUser(entity)
+                    entity.toDomain()
+                } catch (e: HttpException) {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    throw Exception(errorBody ?: e.message)
+                }
             }
         } else {
             runCatching {

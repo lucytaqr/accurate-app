@@ -1,6 +1,5 @@
 package com.accurate.userdirectory.data.repository
 
-import com.accurate.userdirectory.core.network.ApiErrorHandler
 import com.accurate.userdirectory.data.local.dao.CityDao
 import com.accurate.userdirectory.data.local.dao.UserDao
 import com.accurate.userdirectory.data.local.entity.CityEntity

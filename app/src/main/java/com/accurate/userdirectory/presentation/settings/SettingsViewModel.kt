@@ -8,7 +8,6 @@ import com.accurate.userdirectory.domain.usecase.ObserveUsersUseCase
 import com.accurate.userdirectory.domain.usecase.RefreshCitiesUseCase
 import com.accurate.userdirectory.domain.usecase.RefreshUsersUseCase
 import com.accurate.userdirectory.domain.usecase.SyncPendingUsersUseCase
-import com.accurate.userdirectory.presentation.users.UserListViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

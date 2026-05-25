@@ -1,7 +1,5 @@
 package com.accurate.userdirectory.presentation.adduser
 
-import com.accurate.userdirectory.domain.model.Gender
-
 object AddUserFormValidator {
     fun validate(state: AddUserUiState): Map<String, String> {
         val errors = mutableMapOf<String, String>()

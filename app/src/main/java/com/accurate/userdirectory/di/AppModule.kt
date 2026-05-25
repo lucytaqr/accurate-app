@@ -1,9 +1,5 @@
 package com.accurate.userdirectory.di
 
-import com.accurate.userdirectory.core.common.DateTimeProvider
-import com.accurate.userdirectory.core.common.DefaultDispatchersProvider
-import com.accurate.userdirectory.core.common.DispatchersProvider
-import com.accurate.userdirectory.core.common.SystemDateTimeProvider
 import com.accurate.userdirectory.core.network.AndroidNetworkMonitor
 import com.accurate.userdirectory.core.network.NetworkMonitor
 import com.accurate.userdirectory.data.repository.ActivityLogRepositoryImpl
@@ -37,12 +33,4 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindNetworkMonitor(impl: AndroidNetworkMonitor): NetworkMonitor
-
-    @Binds
-    @Singleton
-    abstract fun bindDispatchersProvider(impl: DefaultDispatchersProvider): DispatchersProvider
-
-    @Binds
-    @Singleton
-    abstract fun bindDateTimeProvider(impl: SystemDateTimeProvider): DateTimeProvider
 }

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.PersonOff
-import androidx.compose.material.icons.filled.SignalWifiOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -117,32 +116,4 @@ fun ErrorStateView(
     }
 }
 
-@Composable
-fun OfflineStateView(
-    message: String,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.SignalWifiOff,
-            contentDescription = null,
-            tint = AccurateColors.Warning,
-            modifier = Modifier.size(72.dp)
-        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            color = AccurateColors.TextSecondary
-        )
-    }
-}

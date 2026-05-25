@@ -2,8 +2,6 @@ package com.accurate.userdirectory.presentation.users
 
 import com.accurate.userdirectory.core.common.UiText
 import com.accurate.userdirectory.domain.model.City
-import com.accurate.userdirectory.domain.model.Gender
-import com.accurate.userdirectory.domain.model.SortOption
 import com.accurate.userdirectory.domain.model.User
 import com.accurate.userdirectory.domain.model.UserFilter
 
